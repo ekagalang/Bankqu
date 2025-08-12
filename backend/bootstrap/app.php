@@ -29,10 +29,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Web middleware group (default Laravel)
-        $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
-        ]);
+        // $middleware->web(append: [
+        //    \App\Http\Middleware\HandleInertiaRequests::class,
+        //    \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
