@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\AuthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,29 +38,29 @@ Route::get('/health', function () {
     ]);
 });
 
-// Auth routes (placeholder)
+// Auth routes - DIRECT endpoints (without prefix)
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
+
+// Protected auth routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+});
+
+// Alternative auth routes with prefix (keeping old structure)
 Route::prefix('auth')->group(function () {
-    Route::post('/login', function (Request $request) {
-        return response()->json([
-            'message' => 'Login endpoint - to be implemented',
-            'received_data' => $request->only(['email'])
-        ]);
-    });
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
     
-    Route::post('/register', function (Request $request) {
-        return response()->json([
-            'message' => 'Register endpoint - to be implemented',
-            'received_data' => $request->only(['name', 'email'])
-        ]);
-    });
-    
-    Route::post('/logout', function (Request $request) {
-        return response()->json(['message' => 'Logout successful']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AuthController::class, 'me']);
     });
 });
 
-// Data endpoints (placeholder)
-Route::prefix('v1')->group(function () {
+// Data endpoints (placeholder - will be replaced with proper controllers later)
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/accounts', function () {
         return response()->json([
             'success' => true,
