@@ -1,0 +1,37 @@
+# Environment files (SENSITIVE - jangan di-push)
+backend/.env
+frontend/.env
+
+# Database files (akan di-generate ulang)
+backend/database/database.sqlite
+
+# Dependencies (akan di-install ulang)
+backend/vendor/
+frontend/node_modules/
+frontend/build/
+
+# Docker volumes
+mysql_data/
+mysql_docker_data/
+
+# Laravel specific
+backend/storage/logs/
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/bootstrap/cache/
+
+# System files
+.DS_Store
+Thumbs.db
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup files
+*.backup
+*.bak

@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # Frontend React App
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # Prevent node_modules from being overwritten
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000/api
+      - CHOKIDAR_USEPOLLING=true  # Enable hot reload in Docker
+      - WATCHPACK_POLLING=true    # Additional polling for file changes
+      - GENERATE_SOURCEMAP=false  # Faster builds
+    depends_on:
+      - backend
+    networks:
+      - bankqu-network
+    stdin_open: true  # Keep React dev server interactive
+    tty: true
+    restart: unless-stopped
+
+  # Backend Laravel API
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+      - /var/www/html/vendor      # Prevent vendor from being overwritten
+      - /var/www/html/node_modules # If you have node_modules in backend
+    environment:
+      - APP_NAME=BankQu
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://localhost:8000
+      - LOG_CHANNEL=stack
+      - LOG_LEVEL=debug
+      
+      # Database configuration untuk Docker (terpisah dari MySQL lokal)
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=bankqu      # Database terpisah untuk Docker
+      - DB_USERNAME=root
+      - DB_PASSWORD=Samphistik@7       # Password sesuai sistem anda
+      
+      # Cache & Session (menggunakan database sesuai config anda)
+      - CACHE_STORE=database
+      - SESSION_DRIVER=database
+      - SESSION_LIFETIME=120
+      - QUEUE_CONNECTION=database
+      
+      # CORS & Sanctum (penting untuk koneksi FE-BE)
+      - SANCTUM_STATEFUL_DOMAINS=localhost:3000,127.0.0.1:3000
+      - SESSION_DOMAIN=localhost
+      
+      # Mail & Broadcasting
+      - MAIL_MAILER=log
+      - BROADCAST_CONNECTION=log
+      - FILESYSTEM_DISK=local
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - bankqu-network
+    restart: unless-stopped
+
+  # MySQL Database (menggunakan MySQL existing di sistem anda)
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"  # Port berbeda agar tidak bentrok dengan MySQL lokal di 3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=Samphistik@7  # Sesuai password anda
+      - MYSQL_DATABASE=bankqu       # Database terpisah untuk Docker
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=Samphistik@7
+      - MYSQL_ROOT_HOST=%  # Allow root from any host
+    volumes:
+      - mysql_docker_data:/var/lib/mysql   # Volume terpisah
+      - ./backend/database/init:/docker-entrypoint-initdb.d
+    networks:
+      - bankqu-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pSamphistik@7"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+
+  # phpMyAdmin (untuk manage database Docker)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=Samphistik@7  # Sesuai password anda
+      - MYSQL_ROOT_PASSWORD=Samphistik@7
+    depends_on:
+      - mysql
+    networks:
+      - bankqu-network
+    restart: unless-stopped
+
+  # Mailpit (untuk testing email - optional)
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - bankqu-network
+    restart: unless-stopped
+
+# Named volumes untuk data persistence
+volumes:
+  mysql_docker_data:  # Volume terpisah untuk Docker MySQL
+    driver: local
+
+# Custom network untuk isolasi
+networks:
+  bankqu-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
