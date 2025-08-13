@@ -1,46 +1,40 @@
 <?php
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class AccountController extends Controller
 {
-    public function index(Request $request)
+    public function index(): JsonResponse
     {
-        $accounts = $request->user()->accounts()
-            ->where('is_active', true)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
+        $accounts = Account::where('user_id', 1)->get(); // Default user for demo
+        
         return response()->json([
             'success' => true,
             'data' => $accounts
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:bank,cash,ewallet,investment',
-            'balance' => 'required|numeric|min:0',
-            'account_number' => 'nullable|string|max:50',
-            'bank_name' => 'nullable|string|max:100',
-            'description' => 'nullable|string|max:500',
+            'type' => 'required|in:checking,savings,credit,investment,cash',
+            'balance' => 'numeric|min:0',
+            'color' => 'string|max:50',
+            'description' => 'nullable|string'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'data' => $validator->errors()
-            ], 422);
-        }
+        $validated['user_id'] = 1; // Default user for demo
+        $validated['color'] = $validated['color'] ?? 'blue';
+        $validated['balance'] = $validated['balance'] ?? 0;
 
-        $account = $request->user()->accounts()->create($request->all());
+        $account = Account::create($validated);
 
         return response()->json([
             'success' => true,
@@ -49,49 +43,25 @@ class AccountController extends Controller
         ], 201);
     }
 
-    public function show(Request $request, Account $account)
+    public function show(Account $account): JsonResponse
     {
-        if ($account->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         return response()->json([
             'success' => true,
             'data' => $account
         ]);
     }
 
-    public function update(Request $request, Account $account)
+    public function update(Request $request, Account $account): JsonResponse
     {
-        if ($account->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'string|max:255',
-            'type' => 'in:bank,cash,ewallet,investment',
+            'type' => 'in:checking,savings,credit,investment,cash',
             'balance' => 'numeric|min:0',
-            'account_number' => 'nullable|string|max:50',
-            'bank_name' => 'nullable|string|max:100',
-            'description' => 'nullable|string|max:500',
-            'is_active' => 'boolean',
+            'color' => 'string|max:50',
+            'description' => 'nullable|string'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'data' => $validator->errors()
-            ], 422);
-        }
-
-        $account->update($request->all());
+        $account->update($validated);
 
         return response()->json([
             'success' => true,
@@ -100,20 +70,13 @@ class AccountController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, Account $account)
+    public function destroy(Account $account): JsonResponse
     {
-        if ($account->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $account->update(['is_active' => false]);
+        $account->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Account deactivated successfully'
+            'message' => 'Account deleted successfully'
         ]);
     }
 }
