@@ -47,9 +47,9 @@ services:
       - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=bankqu      # Database terpisah untuk Docker
+      - DB_DATABASE=bankqu_db      # Database terpisah untuk Docker
       - DB_USERNAME=root
-      - DB_PASSWORD=Samphistik@7       # Password sesuai sistem anda
+      - DB_PASSWORD=admin       # Password sesuai sistem anda
       
       # Cache & Session (menggunakan database sesuai config anda)
       - CACHE_STORE=database
@@ -78,10 +78,10 @@ services:
     ports:
       - "3307:3306"  # Port berbeda agar tidak bentrok dengan MySQL lokal di 3306
     environment:
-      - MYSQL_ROOT_PASSWORD=Samphistik@7  # Sesuai password anda
-      - MYSQL_DATABASE=bankqu       # Database terpisah untuk Docker
+      - MYSQL_ROOT_PASSWORD=admin  # Sesuai password anda
+      - MYSQL_DATABASE=bankqu_db       # Database terpisah untuk Docker
       - MYSQL_USER=root
-      - MYSQL_PASSWORD=Samphistik@7
+      - MYSQL_PASSWORD=admin
       - MYSQL_ROOT_HOST=%  # Allow root from any host
     volumes:
       - mysql_docker_data:/var/lib/mysql   # Volume terpisah
@@ -90,7 +90,7 @@ services:
       - bankqu-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pSamphistik@7"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-padmin"]
       timeout: 20s
       retries: 10
       interval: 10s
@@ -108,8 +108,8 @@ services:
     environment:
       - PMA_HOST=mysql
       - PMA_USER=root
-      - PMA_PASSWORD=Samphistik@7  # Sesuai password anda
-      - MYSQL_ROOT_PASSWORD=Samphistik@7
+      - PMA_PASSWORD=admin  # Sesuai password anda
+      - MYSQL_ROOT_PASSWORD=admin
     depends_on:
       - mysql
     networks:

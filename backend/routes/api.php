@@ -1,15 +1,21 @@
-﻿<?php
+<?php
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\AccountController;
+use App\Http\Controllers\API\TransactionController;
+use App\Http\Controllers\API\BudgetController;
+use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\InvestmentController;
 
 // Clear output buffer to prevent BOM
 if (ob_get_level()) {
     ob_clean();
 }
 
+// Health check endpoint
 Route::get('/health', function () {
-    // Clear any output buffer
     if (ob_get_level()) ob_clean();
     
     return response()->json([
@@ -19,37 +25,36 @@ Route::get('/health', function () {
       ->header('Content-Type', 'application/json; charset=utf-8');
 });
 
-Route::post('/login', function (Request $request) {
-    // Clear any output buffer
-    if (ob_get_level()) ob_clean();
+// Public Auth Routes
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+// Protected routes
+Route::middleware('auth:sanctum')->group(function () {
+    // Auth routes
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
     
-    if (!$request->email || !$request->password) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Email and password are required'
-        ], 422)->header('Access-Control-Allow-Origin', '*');
-    }
+    // Account routes
+    Route::apiResource('accounts', AccountController::class);
     
-    return response()->json([
-        'success' => true,
-        'message' => 'Login successful',
-        'data' => [
-            'user' => [
-                'id' => 1,
-                'name' => 'Admin BankQu',
-                'email' => $request->email,
-                'email_verified_at' => now()->toISOString()
-            ],
-            'access_token' => 'demo-token-' . time() . '-' . rand(1000, 9999),
-            'token_type' => 'Bearer'
-        ]
-    ])->header('Access-Control-Allow-Origin', '*')
-      ->header('Content-Type', 'application/json; charset=utf-8');
+    // Transaction routes
+    Route::apiResource('transactions', TransactionController::class);
+    
+    // Budget routes
+    Route::apiResource('budgets', BudgetController::class);
+    
+    // Investment routes
+    Route::apiResource('investments', InvestmentController::class);
+    
+    // Category routes
+    Route::apiResource('categories', CategoryController::class);
 });
 
+// CORS preflight
 Route::options('/{any}', function () {
     return response('', 200)
         ->header('Access-Control-Allow-Origin', '*')
-        ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
         ->header('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, X-Requested-With');
 })->where('any', '.*');
