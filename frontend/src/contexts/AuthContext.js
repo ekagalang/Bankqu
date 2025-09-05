@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
-  const API_BASE_URL = 'http://localhost:8000/api';
+  const API_BASE_URL = 'https://bankqu.ekagalang.my.id/api';
 
   // Set up axios defaults if token exists
   useEffect(() => {
